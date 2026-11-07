@@ -1,0 +1,17 @@
+{
+  "ticket_id": "TKT-direct-001",
+  "status": "draft",
+  "user_id": "demo-user-a",
+  "thread_id": "direct",
+  "category": "wifi",
+  "summary": "Campus-Demo Wi-Fi will not connect",
+  "steps_tried": [
+    "enabled Wi-Fi",
+    "forgot saved network"
+  ],
+  "service_status": "operational",
+  "status_profile": "normal",
+  "reference_ids": [
+    "GUIDE-WIFI"
+  ]
+}

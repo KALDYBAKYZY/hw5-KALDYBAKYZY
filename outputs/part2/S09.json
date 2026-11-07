@@ -1,0 +1,107 @@
+{
+  "scenario": "S09",
+  "title": "Missing ticket details",
+  "command": "python run_part2.py --scenario S09",
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "normal",
+  "user_id": "demo-user-a",
+  "thread_id": "s09",
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "Prepare a support ticket.",
+      "nodes": [
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "agent",
+          "model_answer": "I can prepare a local ticket draft, but I need:\n\n1. Is the problem with **Wi‑Fi** or **password/account recovery**?\n2. What specific problem are you experiencing?\n3. What troubleshooting steps have you already tried?\n\nI won’t ask for or include any password, API key, or recovery code."
+        }
+      ],
+      "final_reply": "I can prepare a local ticket draft, but I need:\n\n1. Is the problem with **Wi‑Fi** or **password/account recovery**?\n2. What specific problem are you experiencing?\n3. What troubleshooting steps have you already tried?\n\nI won’t ask for or include any password, API key, or recovery code.",
+      "tool_rounds": 0,
+      "loop_limit_reached": false
+    },
+    {
+      "user_message": "The issue is Wi-Fi. I enabled it and tried reconnecting, but it still fails.",
+      "nodes": [
+        "agent",
+        "tools",
+        "agent",
+        "tools",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "find_instructions",
+              "args": {
+                "topic": "wifi"
+              }
+            },
+            {
+              "name": "check_service_status",
+              "args": {
+                "topic": "wifi"
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "find_instructions",
+              "result": "{\"found\": true, \"topic\": \"wifi\", \"instruction_id\": \"GUIDE-WIFI\", \"title\": \"Connect to the practice campus network\", \"steps\": [\"Check that Wi-Fi is enabled and airplane mode is off.\", \"Select the fictional Campus-Demo network.\", \"If connection fails, forget the saved network and try connecting again.\", \"If the problem remains, check the service status before preparing a ticket.\"], \"source\": \"data/helpdesk.json\"}"
+            },
+            {
+              "name": "check_service_status",
+              "result": "{\"service\": \"wifi\", \"status\": \"operational\", \"message\": \"The demo Wi-Fi service has no reported outage.\", \"status_profile\": \"normal\", \"source\": \"data/service_status.json\"}"
+            }
+          ],
+          "tool_rounds": 1
+        },
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "prepare_ticket",
+              "args": {
+                "summary": "Wi-Fi is enabled, but reconnecting still fails.",
+                "steps_tried": [
+                  "Enabled Wi-Fi",
+                  "Tried reconnecting"
+                ],
+                "category": "wifi",
+                "service_status": "operational",
+                "reference_ids": [
+                  "GUIDE-WIFI"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "prepare_ticket",
+              "result": "{\"created\": true, \"ticket_id\": \"TKT-s09-001\", \"file\": \"outputs/tickets/TKT-s09-001.json\", \"sent\": false, \"ticket\": {\"ticket_id\": \"TKT-s09-001\", \"status\": \"draft\", \"user_id\": \"demo-user-a\", \"thread_id\": \"s09\", \"category\": \"wifi\", \"summary\": \"Wi-Fi is enabled, but reconnecting still fails.\", \"steps_tried\": [\"Enabled Wi-Fi\", \"Tried reconnecting\"], \"service_status\": \"operational\", \"status_profile\": \"normal\", \"reference_ids\": [\"GUIDE-WIFI\"]}}"
+            }
+          ],
+          "tool_rounds": 2
+        },
+        {
+          "node": "agent",
+          "model_answer": "A local support ticket draft was prepared successfully.\n\n- **Ticket:** TKT-s09-001\n- **File:** `outputs/tickets/TKT-s09-001.json`\n- **Status:** Draft — not sent\n- **Service status:** Operational\n- **Recorded steps:** Enabled Wi‑Fi and tried reconnecting"
+        }
+      ],
+      "final_reply": "A local support ticket draft was prepared successfully.\n\n- **Ticket:** TKT-s09-001\n- **File:** `outputs/tickets/TKT-s09-001.json`\n- **Status:** Draft — not sent\n- **Service status:** Operational\n- **Recorded steps:** Enabled Wi‑Fi and tried reconnecting",
+      "tool_rounds": 2,
+      "loop_limit_reached": false
+    }
+  ]
+}

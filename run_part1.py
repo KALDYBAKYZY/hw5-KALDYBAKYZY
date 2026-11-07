@@ -1,9 +1,3 @@
-"""Run the Part 1 demonstrations and save logs to outputs/.
-
-Usage:
-    python run_part1.py                 # S01-S05 + the 4 messages, both variants
-    python run_part1.py --draw          # also print Mermaid drawings of both graphs
-"""
 import json
 import sys
 from pathlib import Path
@@ -49,7 +43,6 @@ def main() -> None:
             print(f"\n--- Mermaid: {name} ---")
             print(g.get_graph().draw_mermaid())
 
-    # 1) Predict, run, compare (original graph)
     print("=== Part 1: original graph — prediction vs actual ===")
     comparison = []
     for msg in MESSAGES:
@@ -62,7 +55,6 @@ def main() -> None:
                            "trace": result["trace"]})
     save(OUT / "predictions_original.json", {"graph_variant": "original", "runs": comparison})
 
-    # 2) The changed graph on the same 4 messages
     print("\n=== Part 1: changed graph (with_clarification) ===")
     changed = [run_with_trace(graphs["with_clarification"], m) for m in MESSAGES]
     for r in changed:
@@ -70,7 +62,6 @@ def main() -> None:
     save(OUT / "runs_with_clarification.json",
          {"graph_variant": "with_clarification", "runs": changed})
 
-    # 3) Supplied scenarios S01-S05
     scenarios = json.loads((ROOT / "data" / "scenarios.json").read_text(encoding="utf-8"))
     for sc in scenarios["scenarios"]:
         if sc["part"] != 1:

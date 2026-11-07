@@ -1,0 +1,17 @@
+{
+  "ticket_id": "TKT-s06-001",
+  "status": "draft",
+  "user_id": "demo-user-a",
+  "thread_id": "s06",
+  "category": "wifi",
+  "summary": "Campus-Demo will not connect even after Wi-Fi was enabled and the saved network was forgotten.",
+  "steps_tried": [
+    "Enabled Wi-Fi",
+    "Forgot the saved network"
+  ],
+  "service_status": "operational",
+  "status_profile": "normal",
+  "reference_ids": [
+    "GUIDE-WIFI"
+  ]
+}

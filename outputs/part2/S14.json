@@ -1,0 +1,60 @@
+{
+  "scenario": "S14",
+  "title": "Password recovery outage",
+  "command": "python run_part2.py --scenario S14",
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "recovery_outage",
+  "user_id": "demo-user-a",
+  "thread_id": "s14",
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "My password recovery page is unavailable. Check the service status. Is there a known problem?",
+      "nodes": [
+        "agent",
+        "tools",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "check_service_status",
+              "args": {
+                "topic": "password"
+              }
+            },
+            {
+              "name": "find_instructions",
+              "args": {
+                "topic": "password"
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "check_service_status",
+              "result": "{\"service\": \"account_recovery\", \"status\": \"outage\", \"message\": \"The demo account-recovery service is unavailable. The fixture gives no repair time.\", \"status_profile\": \"recovery_outage\", \"source\": \"data/service_status.json\"}"
+            },
+            {
+              "name": "find_instructions",
+              "result": "{\"found\": true, \"topic\": \"password\", \"instruction_id\": \"GUIDE-PASSWORD\", \"title\": \"Recover access to the practice account\", \"steps\": [\"Open the practice sign-in screen and choose Forgot password.\", \"Follow the recovery instructions shown by the practice application.\", \"If recovery is unavailable, prepare a ticket describing the error.\", \"Never include a password or recovery code in a ticket.\"], \"source\": \"data/helpdesk.json\"}"
+            }
+          ],
+          "tool_rounds": 1
+        },
+        {
+          "node": "agent",
+          "model_answer": "Yes. The password-recovery service is currently experiencing an outage, so the page’s unavailability is a known problem. No repair time is available.\n\nYou can try again later. If needed, prepare a support ticket describing the error—do not include any password or recovery code."
+        }
+      ],
+      "final_reply": "Yes. The password-recovery service is currently experiencing an outage, so the page’s unavailability is a known problem. No repair time is available.\n\nYou can try again later. If needed, prepare a support ticket describing the error—do not include any password or recovery code.",
+      "tool_rounds": 1,
+      "loop_limit_reached": false
+    }
+  ]
+}

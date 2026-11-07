@@ -1,0 +1,17 @@
+{
+  "ticket_id": "TKT-s09-001",
+  "status": "draft",
+  "user_id": "demo-user-a",
+  "thread_id": "s09",
+  "category": "wifi",
+  "summary": "Wi-Fi is enabled, but reconnecting still fails.",
+  "steps_tried": [
+    "Enabled Wi-Fi",
+    "Tried reconnecting"
+  ],
+  "service_status": "operational",
+  "status_profile": "normal",
+  "reference_ids": [
+    "GUIDE-WIFI"
+  ]
+}

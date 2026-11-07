@@ -1,17 +1,10 @@
-"""Part 1 — a small helpdesk graph WITHOUT an LLM.
 
-Two variants:
-  * "original"            START -> read_request -> wifi_help | password_help | other_help -> END
-  * "with_clarification"  same, plus clarify_problem when both topics appear
-"""
 import json
 from pathlib import Path
 from typing import TypedDict
-
 from langgraph.graph import StateGraph, START, END
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-
 
 def load_helpdesk() -> dict:
     with open(DATA_DIR / "helpdesk.json", encoding="utf-8") as f:
@@ -19,25 +12,20 @@ def load_helpdesk() -> dict:
 
 
 HELPDESK = load_helpdesk()
-ALIASES = HELPDESK["topic_aliases"]  # {"wifi": ["wifi", "wi-fi"], "password": ["password"]}
+ALIASES = HELPDESK["topic_aliases"] 
 
 
 class HelpdeskState(TypedDict, total=False):
-    message: str   # the user's original message
-    category: str  # set by read_request: wifi | password | both | other
-    reply: str     # set by a help node
+    message: str   
+    category: str  
+    reply: str    
 
-
-# ---------- helper: format instructions from helpdesk.json ----------
 def format_instructions(topic: str) -> str:
     guide = HELPDESK["instructions"][topic]
     steps = "\n".join(f"{i}. {s}" for i, s in enumerate(guide["steps"], 1))
     return f"{guide['title']} ({guide['instruction_id']}):\n{steps}"
 
-
-# ---------- nodes ----------
 def read_request(state: HelpdeskState) -> dict:
-    """Reads `message`, writes `category`. Case-insensitive."""
     text = state["message"].lower()
     has_wifi = any(word in text for word in ALIASES["wifi"])
     has_password = any(word in text for word in ALIASES["password"])
@@ -70,9 +58,7 @@ def clarify_problem(state: HelpdeskState) -> dict:
                      "Which problem do you want to solve first: Wi-Fi or password?"}
 
 
-# ---------- routers (conditional edges) ----------
 def route_original(state: HelpdeskState) -> str:
-    """Original rules: Wi-Fi is checked FIRST, so 'both' goes to wifi_help."""
     category = state["category"]
     if category in ("wifi", "both"):
         return "wifi_help"
@@ -82,13 +68,11 @@ def route_original(state: HelpdeskState) -> str:
 
 
 def route_with_clarification(state: HelpdeskState) -> str:
-    """Changed rules: if both topics appear, ask which one first."""
     if state["category"] == "both":
         return "clarify_problem"
     return route_original(state)
 
 
-# ---------- build ----------
 def build_graph(variant: str = "original"):
     builder = StateGraph(HelpdeskState)
     builder.add_node("read_request", read_request)
@@ -114,10 +98,8 @@ def build_graph(variant: str = "original"):
 
 
 def run_with_trace(graph, message: str) -> dict:
-    """Run the graph and record the node order and the FULL state after each node."""
     trace = []
     state: dict = {"message": message}
-    # stream_mode="updates" gives {node_name: update} after each node.
     for chunk in graph.stream({"message": message}, stream_mode="updates"):
         for node, update in chunk.items():
             state = {**state, **(update or {})}

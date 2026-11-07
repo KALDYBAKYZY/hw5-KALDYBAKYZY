@@ -1,0 +1,91 @@
+{
+  "find_instructions('wifi')": {
+    "found": true,
+    "topic": "wifi",
+    "instruction_id": "GUIDE-WIFI",
+    "title": "Connect to the practice campus network",
+    "steps": [
+      "Check that Wi-Fi is enabled and airplane mode is off.",
+      "Select the fictional Campus-Demo network.",
+      "If connection fails, forget the saved network and try connecting again.",
+      "If the problem remains, check the service status before preparing a ticket."
+    ],
+    "source": "data/helpdesk.json"
+  },
+  "find_instructions('password')": {
+    "found": true,
+    "topic": "password",
+    "instruction_id": "GUIDE-PASSWORD",
+    "title": "Recover access to the practice account",
+    "steps": [
+      "Open the practice sign-in screen and choose Forgot password.",
+      "Follow the recovery instructions shown by the practice application.",
+      "If recovery is unavailable, prepare a ticket describing the error.",
+      "Never include a password or recovery code in a ticket."
+    ],
+    "source": "data/helpdesk.json"
+  },
+  "find_instructions('printer')": {
+    "found": false,
+    "topic": "printer",
+    "error": "No instructions for 'printer'. Supported topics: ['wifi', 'password']."
+  },
+  "check_service_status('wifi', 'normal')": {
+    "service": "wifi",
+    "status": "operational",
+    "message": "The demo Wi-Fi service has no reported outage.",
+    "status_profile": "normal",
+    "source": "data/service_status.json"
+  },
+  "check_service_status('wifi', 'wifi_outage')": {
+    "service": "wifi",
+    "status": "outage",
+    "message": "The demo Wi-Fi service is unavailable across campus. The fixture gives no repair time.",
+    "status_profile": "wifi_outage",
+    "source": "data/service_status.json"
+  },
+  "check_service_status('wifi', 'status_unavailable')": {
+    "service": "wifi",
+    "status": "unknown",
+    "message": "The demo Wi-Fi status source is unavailable.",
+    "status_profile": "status_unavailable",
+    "source": "data/service_status.json"
+  },
+  "check_service_status('password', 'recovery_outage')": {
+    "service": "account_recovery",
+    "status": "outage",
+    "message": "The demo account-recovery service is unavailable. The fixture gives no repair time.",
+    "status_profile": "recovery_outage",
+    "source": "data/service_status.json"
+  },
+  "prepare_ticket(full details)": {
+    "created": true,
+    "ticket_id": "TKT-direct-001",
+    "file": "outputs/part2/direct_tickets/TKT-direct-001.json",
+    "sent": false,
+    "ticket": {
+      "ticket_id": "TKT-direct-001",
+      "status": "draft",
+      "user_id": "demo-user-a",
+      "thread_id": "direct",
+      "category": "wifi",
+      "summary": "Campus-Demo Wi-Fi will not connect",
+      "steps_tried": [
+        "enabled Wi-Fi",
+        "forgot saved network"
+      ],
+      "service_status": "operational",
+      "status_profile": "normal",
+      "reference_ids": [
+        "GUIDE-WIFI"
+      ]
+    }
+  },
+  "prepare_ticket(no steps)": {
+    "created": false,
+    "missing": [
+      "steps already tried"
+    ],
+    "error": "Ask the user for: steps already tried. Do not invent details."
+  }
+}

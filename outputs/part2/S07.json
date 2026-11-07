@@ -1,0 +1,60 @@
+{
+  "scenario": "S07",
+  "title": "The same request during a Wi-Fi outage",
+  "command": "python run_part2.py --scenario S07",
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "wifi_outage",
+  "user_id": "demo-user-a",
+  "thread_id": "s07",
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "I enabled Wi-Fi and forgot the saved network, but Campus-Demo still will not connect. Check whether Wi-Fi is down. If it is operating, prepare a ticket about this problem.",
+      "nodes": [
+        "agent",
+        "tools",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "find_instructions",
+              "args": {
+                "topic": "wifi"
+              }
+            },
+            {
+              "name": "check_service_status",
+              "args": {
+                "topic": "wifi"
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "find_instructions",
+              "result": "{\"found\": true, \"topic\": \"wifi\", \"instruction_id\": \"GUIDE-WIFI\", \"title\": \"Connect to the practice campus network\", \"steps\": [\"Check that Wi-Fi is enabled and airplane mode is off.\", \"Select the fictional Campus-Demo network.\", \"If connection fails, forget the saved network and try connecting again.\", \"If the problem remains, check the service status before preparing a ticket.\"], \"source\": \"data/helpdesk.json\"}"
+            },
+            {
+              "name": "check_service_status",
+              "result": "{\"service\": \"wifi\", \"status\": \"outage\", \"message\": \"The demo Wi-Fi service is unavailable across campus. The fixture gives no repair time.\", \"status_profile\": \"wifi_outage\", \"source\": \"data/service_status.json\"}"
+            }
+          ],
+          "tool_rounds": 1
+        },
+        {
+          "node": "agent",
+          "model_answer": "Wi-Fi is currently experiencing a campus-wide outage. I did not prepare a ticket because the service is not operating. No repair time is available."
+        }
+      ],
+      "final_reply": "Wi-Fi is currently experiencing a campus-wide outage. I did not prepare a ticket because the service is not operating. No repair time is available.",
+      "tool_rounds": 1,
+      "loop_limit_reached": false
+    }
+  ]
+}
