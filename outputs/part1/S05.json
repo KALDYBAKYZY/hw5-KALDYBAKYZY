@@ -1,0 +1,43 @@
+{
+  "scenario": "S05",
+  "title": "Two topics after adding clarification",
+  "command": "python run_part1.py",
+  "graph_variant": "with_clarification",
+  "status_profile": "normal",
+  "user_id": "demo-user-a",
+  "thread_id": "s05",
+  "message": "My Wi-Fi password does not work.",
+  "route": [
+    "read_request",
+    "clarify_problem"
+  ],
+  "trace": [
+    {
+      "node": "read_request",
+      "update": {
+        "category": "both"
+      },
+      "state_after": {
+        "message": "My Wi-Fi password does not work.",
+        "category": "both"
+      }
+    },
+    {
+      "node": "clarify_problem",
+      "update": {
+        "reply": "Your message mentions both Wi-Fi and a password. Which problem do you want to solve first: Wi-Fi or password?"
+      },
+      "state_after": {
+        "message": "My Wi-Fi password does not work.",
+        "category": "both",
+        "reply": "Your message mentions both Wi-Fi and a password. Which problem do you want to solve first: Wi-Fi or password?"
+      }
+    }
+  ],
+  "final_state": {
+    "message": "My Wi-Fi password does not work.",
+    "category": "both",
+    "reply": "Your message mentions both Wi-Fi and a password. Which problem do you want to solve first: Wi-Fi or password?"
+  },
+  "final_reply": "Your message mentions both Wi-Fi and a password. Which problem do you want to solve first: Wi-Fi or password?"
+}
