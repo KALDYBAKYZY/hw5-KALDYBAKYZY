@@ -176,22 +176,104 @@ Expected: `operational` → ticket draft. `outage` → no ticket, the condition 
 
 ## Part 3 — Memory
 
-TODO: explain conversation state, thread_id, user identifier, user preference storage, and retrieval from helpdesk.json.
+Code: `helpdesk/memory.py`, `helpdesk/agent.py` (`load_user_memory` node), `helpdesk/tools.py` (`save_user_preference`), `run_part3.py`, `chat.py`.
+
+```mermaid
+graph TD
+    START([START]) --> load_user_memory
+    load_user_memory --> agent
+    agent -.tool calls, rounds < limit.-> tools
+    tools --> agent
+    agent -.tool calls, rounds >= limit.-> limit_reached
+    agent -.no tool calls.-> END([END])
+    limit_reached --> END
+```
+
+I use **two separate kinds of memory**. Both are saved on disk in `local-storage/` (this folder is in `.gitignore`).
+
+| | Conversation memory | User memory |
+| --- | --- | --- |
+| What it holds | All messages of one conversation, tool results, `tool_rounds` (the full graph state) | Saved preferences of one person, e.g. `{"language": "Kazakh"}` |
+| Key | `thread_id` | `user_id` |
+| How | LangGraph checkpointer `SqliteSaver` passed to `compile()` | My own small SQLite table `preferences(user_id, key, value, updated_at)` |
+| File | `local-storage/conversations.sqlite` | `local-storage/user_memory.sqlite` |
+| Read | Automatically by LangGraph at the start of each run with the same `thread_id` | By the `load_user_memory` node at the start of each turn |
+| Written | Automatically by LangGraph after each node | By the tool `save_user_preference`, only when the user asks to remember |
+
+**`thread_id` vs user identifier.** A `thread_id` identifies **one conversation**. A `user_id` identifies **one person**. One user can have many threads. A new thread starts with empty conversation memory, but the same user memory. Different users never share user memory. Both identifiers are set by **the application** (`SessionContext`, the command line), not by the model. The model cannot read or write another user's data, because `save_user_preference` and `load_user_memory` always use `ctx.user_id`.
+
+**Retrieval vs memory.** `find_instructions` reads `data/helpdesk.json`. This is **retrieval**: fixed reference data, the same for every user and every conversation, and nobody changes it while the program runs. The chosen language is **memory**: it is learned from what this user said, it is saved by the program, and it belongs only to this user.
+
+**Only a safe preference is saved.** `UserMemory.set` accepts only the key `language` and a short value, so passwords or other text cannot be saved there.
+
+**Real restart.** `run_part3.py` splits a scenario at every `restart_process` event. For each part it starts a **new Python process** (`--phase N`). The first process ends before the next one starts. Only `local-storage/` connects them. Each log records the `process_id`, so you can see that the processes are different. I never paste the old conversation into the new input.
+
+**What each log shows.** For every turn the log has `sources`:
+- `conversation_state.messages_loaded_from_checkpoint` — how many earlier messages LangGraph loaded for this `thread_id`;
+- `user_memory_read` — what `load_user_memory` read for this `user_id`;
+- `user_memory_written` — what `save_user_preference` saved;
+- `reference_files` — which data files the tools read (`data/helpdesk.json`, `data/service_status.json`).
 
 | Situation | Command used | Log file | What happened |
 | --- | --- | --- | --- |
-| Refer to an earlier message | | | |
-| Close, restart and resume | | | |
-| Same user, new conversation | | | |
-| Different user | | | |
+| Refer to an earlier message (S10) | `python run_part3.py --scenario S10` | `outputs/part3/S10_phase1.json` | Turn 1: the model used `find_instructions` (reference file `data/helpdesk.json`) and `check_service_status` (operational). Turn 2 "Which steps did I already try?": **6 earlier messages loaded from the checkpoint** for thread `s10`, no tools. It listed: enabling Wi-Fi, forgetting the saved network, reconnecting. Source: conversation memory |
+| Close, restart and resume (S11) | `python run_part3.py --scenario S11` (2 processes) | `outputs/part3/S11_phase1.json`, `S11_phase2.json` | Process 1 (pid 86771): the model called `save_user_preference(language=Kazakh)` → user memory, then `find_instructions`, and replied in Kazakh. The process ended. Process 2 (pid 86986), same `thread_id restart-a`: **6 earlier messages loaded from `conversations.sqlite`**, user memory read `{language: Kazakh}`. It recalled the Wi-Fi problem and the two steps (enabled, reconnecting) in Kazakh. It also correctly listed guide steps the user did NOT say they tried. I did not paste the old conversation |
+| Same user, new conversation (S12) | `python run_part3.py --scenario S12` (2 processes) | `outputs/part3/S12_phase1.json`, `S12_phase2.json` | Process 1, thread `preference-a1`: preference saved with `save_user_preference`. Process 2, **new** thread `preference-a2`: **0 earlier messages loaded** (old conversation not replayed), user memory read `{language: Kazakh}`. Reply in Kazakh: "You asked to use Kazakh. I can help only with Wi-Fi and password recovery." Source: user memory only |
+| Different user (S13) | `python run_part3.py --scenario S13` | `outputs/part3/S13_phase1.json` | `demo-user-a` saved Kazakh. Then `demo-user-b` (thread `isolation-b`) in the same storage: user memory read `{}`, 0 earlier messages. Reply in English: "No language preference is recorded, and no previous problem has been discussed." The preference of `demo-user-a` did not appear |
+
+Interactive check: `python chat.py --user demo-user-a --thread t1`, type a message, type `exit`, start the same command again and ask what we discussed.
 
 ## Part 4 — Running and checking my work
 
-TODO: point to the README setup steps, package versions, memory-reset instructions, tests and GitHub Actions workflow. Explain which mistake each test catches and which runs use a fake model.
+- **Setup and commands:** see the section "How to run my work" at the top of `README.md` (Python 3.12, virtual environment, `.env`, every command).
+- **Package versions:** `requirements.txt` has exact versions (`==`) of the packages I used.
+- **Memory files:** `local-storage/conversations.sqlite` and `local-storage/user_memory.sqlite`. Clear them with `python run_part3.py --reset` (or delete the `local-storage/` folder). Scenarios with `reset_before: true` clear them automatically.
+- **Tickets:** local drafts in `outputs/tickets/`.
+- **CI:** `.github/workflows/tests.yml` runs `pytest` on every push. It has no API key.
+
+**Fake model.** All tests use `helpdesk/fake_model.py`, a clearly labelled rule-based fake model. It is **not** an LLM. It returns the same message format as a real model (`AIMessage` with `tool_calls`), so the tests check my graph, tools and memory without a key. The real model demonstrations (`outputs/part2/`, `outputs/part3/`) were made with `gpt-5.6-luna` and are separate. The fake model logs, if made, go to `outputs/part2_fake/` and `outputs/part3_fake/` (not committed).
+
+| Test file | Test | Mistake it catches |
+| --- | --- | --- |
+| `test_part1_routing.py` | upper/lower case messages | forgetting `.lower()` |
+| | laptop screen → `other_help` | no fallback route |
+| | Wi-Fi password → `wifi_help` (original) | changing the rule order by mistake |
+| | Wi-Fi password → `clarify_problem` | the new node is not connected |
+| | single topic in the changed graph | the change broke the old rules |
+| | reply contains `GUIDE-WIFI` | hard-coded text instead of `helpdesk.json` |
+| `test_part2_tools_agent.py` | `find_instructions` direct | wrong file or invented instructions |
+| | `check_service_status` × 4 snapshots | ignoring the snapshot; wrong `password → account_recovery` mapping |
+| | `prepare_ticket` writes a draft | ticket not saved, or marked as sent |
+| | `prepare_ticket` with missing details | inventing details instead of asking |
+| | same request, `normal` → ticket | tool result not returned to the model |
+| | same request, `wifi_outage` / `status_unavailable` → no ticket | always making a ticket; treating `unknown` as operational |
+| | missing details → asks first | ticket made from nothing |
+| | endless tool requests stop after the limit | infinite agent ↔ tools loop |
+| `test_part3_memory.py` | preferences per user | preferences saved globally |
+| | unknown key refused | saving secrets in user memory |
+| | same thread recalls steps (S10) | conversation state not given to the model |
+| | close and reopen storage, same thread (S11) | in-memory checkpointer; memory lost on restart |
+| | new thread: 0 old messages, preference still there (S12) | preference kept only in the thread; old transcript replayed |
+| | `demo-user-b` does not see `demo-user-a` (S13) | memory leaking between users |
+| | runner uses two different process ids | a fake "restart" inside one process |
 
 ## Choices and limitations
 
-TODO: explain the storage and libraries I chose, why they fit this task, and what still does not work reliably.
+**Choices.**
+- **LangGraph `StateGraph`** for all parts, so I can see each node and the state after it.
+- **`langchain-openai` + `gpt-5.6-luna`** because I have an OpenAI key. This reasoning model needs `reasoning_effort=none` to use tools in Chat Completions, so I made it a setting in `.env`.
+- **`ToolNode`** to run the tools, and my own counter `tool_rounds` for the loop limit, so the limit is visible in the state and in the logs.
+- **`SqliteSaver`** for conversation memory: it is the official LangGraph checkpointer, saves to one local file and survives a restart. No server is needed.
+- **A small SQLite table** for user memory: it is simple, keyed by `user_id`, and clearly separate from conversation state. I did not put the preference into the thread state, because then a new thread would not see it.
+- The application, not the model, sets `user_id`, `thread_id` and the status snapshot.
+
+**Limitations.**
+- The model output is not fully the same every time. Sometimes it calls an extra tool (for example `find_instructions` together with `check_service_status`). The logs show what really happened.
+- Only one preference (`language`) can be saved. The model must call `save_user_preference`; if it forgets, the preference is not saved.
+- The quality of the Kazakh replies depends on the model. I did not check the grammar.
+- Topic matching in Part 1 is simple keyword search. For example, `wireless` is not recognised.
+- Tickets are only local JSON files; nothing is sent.
+- SQLite files are for one local user. It is not made for many people at the same time.
 
 ## Supplied scenarios — my actual results
 
@@ -206,8 +288,8 @@ TODO: explain the storage and libraries I chose, why they fit this task, and wha
 | S07 — The same request during a Wi-Fi outage | `python run_part2.py --scenario S07` | `outputs/part2/S07.json` | check_service_status → outage. No ticket, no repair time invented |
 | S08 — Status source unavailable | `python run_part2.py --scenario S08` | `outputs/part2/S08.json` | Status unknown. No ticket. Asks if I want a ticket saying the status could not be checked |
 | S09 — Missing ticket details | `python run_part2.py --scenario S09` | `outputs/part2/S09.json`, `outputs/tickets/TKT-s09-001.json` | Turn 1: no tools, asks for the problem and steps. Turn 2: ticket with only the user's steps. The model also checked status (not asked, but it is recorded as operational) |
-| S10 — Use the current conversation | | | |
-| S11 — Persist and recall after restart | | | |
-| S12 — Preference across threads without replay | | | |
-| S13 — Do not share memory between users | | | |
+| S10 — Use the current conversation | `python run_part3.py --scenario S10` | `outputs/part3/S10_phase1.json` | Second message: 6 messages loaded from the checkpoint, the model listed the three steps the user tried. No tool needed |
+| S11 — Persist and recall after restart | `python run_part3.py --scenario S11` (2 processes) | `outputs/part3/S11_phase1.json`, `S11_phase2.json` | Different pids (86771, 86986). After restart: 6 messages loaded for `restart-a`, language Kazakh read from user memory, problem and steps recalled in Kazakh |
+| S12 — Preference across threads without replay | `python run_part3.py --scenario S12` (2 processes) | `outputs/part3/S12_phase1.json`, `S12_phase2.json` | New thread: 0 messages loaded, `{language: Kazakh}` from user memory, reply in Kazakh |
+| S13 — Do not share memory between users | `python run_part3.py --scenario S13` | `outputs/part3/S13_phase1.json` | `demo-user-b`: user memory `{}`, 0 messages. Says nothing is recorded. No leak from `demo-user-a` |
 | S14 — Password recovery outage | `python run_part2.py --scenario S14` | `outputs/part2/S14.json` | password → `account_recovery` service → outage. No repair time invented |

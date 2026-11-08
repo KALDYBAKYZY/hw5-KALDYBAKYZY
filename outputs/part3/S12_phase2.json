@@ -1,0 +1,53 @@
+{
+  "scenario": "S12",
+  "title": "Preference across threads without replay",
+  "phase": 2,
+  "phases_total": 2,
+  "command": "python run_part3.py --scenario S12  (child process: --phase 2)",
+  "process_id": 87248,
+  "reset_before_this_phase": false,
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "normal",
+  "storage": {
+    "conversation_memory": "local-storage/conversations.sqlite (LangGraph SqliteSaver)",
+    "user_memory": "local-storage/user_memory.sqlite"
+  },
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "Which language did I ask you to use? What can you help with?",
+      "nodes": [
+        "load_user_memory",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "load_user_memory",
+          "user_preferences": {
+            "language": "Kazakh"
+          }
+        },
+        {
+          "node": "agent",
+          "model_answer": "Сіз қазақ тілін қолдануды сұрадыңыз.\n\nМен тек университеттің Wi‑Fi және құпиясөзді қалпына келтіру мәселелері бойынша көмектесе аламын."
+        }
+      ],
+      "sources": {
+        "conversation_state": {
+          "thread_id": "preference-a2",
+          "messages_loaded_from_checkpoint": 0
+        },
+        "user_memory_read": {
+          "language": "Kazakh"
+        },
+        "user_memory_written": [],
+        "reference_files": []
+      },
+      "final_reply": "Сіз қазақ тілін қолдануды сұрадыңыз.\n\nМен тек университеттің Wi‑Fi және құпиясөзді қалпына келтіру мәселелері бойынша көмектесе аламын.",
+      "tool_rounds": 0,
+      "loop_limit_reached": false,
+      "user_id": "demo-user-a",
+      "thread_id": "preference-a2"
+    }
+  ]
+}

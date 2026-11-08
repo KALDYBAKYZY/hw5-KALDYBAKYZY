@@ -132,7 +132,7 @@ class SessionContext:
     status_profile: str = "normal"
 
 
-def make_tools(ctx: SessionContext) -> list:
+def make_tools(ctx: SessionContext, user_memory=None) -> list:
     @tool
     def find_instructions(topic: str) -> dict:
         """Get the official troubleshooting steps from the local helpdesk guide.
@@ -159,4 +159,15 @@ def make_tools(ctx: SessionContext) -> list:
                                    status_profile=ctx.status_profile,
                                    service_status=service_status, reference_ids=reference_ids)
 
-    return [find_instructions, check_service_status, prepare_ticket]
+    tools = [find_instructions, check_service_status, prepare_ticket]
+
+    if user_memory is not None:  # Part 3
+        @tool
+        def save_user_preference(key: str, value: str) -> dict:
+            """Save a preference for THIS user in user memory, so later conversations can use it.
+            Call it only when the user explicitly asks you to remember a preference.
+            key: 'language'. value: e.g. 'Kazakh'. Never save passwords or secrets."""
+            return user_memory.set(ctx.user_id, key, value)  # user_id comes from the app
+
+        tools.append(save_user_preference)
+    return tools

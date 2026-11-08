@@ -1,0 +1,142 @@
+{
+  "scenario": "S13",
+  "title": "Do not share memory between users",
+  "phase": 1,
+  "phases_total": 1,
+  "command": "python run_part3.py --scenario S13  (child process: --phase 1)",
+  "process_id": 87280,
+  "reset_before_this_phase": true,
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "normal",
+  "storage": {
+    "conversation_memory": "local-storage/conversations.sqlite (LangGraph SqliteSaver)",
+    "user_memory": "local-storage/user_memory.sqlite"
+  },
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "Please remember that I prefer replies in Kazakh. I have a Wi-Fi problem.",
+      "nodes": [
+        "load_user_memory",
+        "agent",
+        "tools",
+        "agent",
+        "tools",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "load_user_memory",
+          "user_preferences": {}
+        },
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "save_user_preference",
+              "args": {
+                "key": "language",
+                "value": "Kazakh"
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "save_user_preference",
+              "result": "{\"saved\": true, \"user_id\": \"demo-user-a\", \"key\": \"language\", \"value\": \"Kazakh\", \"source\": \"user memory (local-storage/user_memory.sqlite)\"}"
+            }
+          ],
+          "tool_rounds": 1
+        },
+        {
+          "node": "agent",
+          "tool_requests": [
+            {
+              "name": "find_instructions",
+              "args": {
+                "topic": "wifi"
+              }
+            },
+            {
+              "name": "check_service_status",
+              "args": {
+                "topic": "wifi"
+              }
+            }
+          ]
+        },
+        {
+          "node": "tools",
+          "tool_results": [
+            {
+              "name": "find_instructions",
+              "result": "{\"found\": true, \"topic\": \"wifi\", \"instruction_id\": \"GUIDE-WIFI\", \"title\": \"Connect to the practice campus network\", \"steps\": [\"Check that Wi-Fi is enabled and airplane mode is off.\", \"Select the fictional Campus-Demo network.\", \"If connection fails, forget the saved network and try connecting again.\", \"If the problem remains, check the service status before preparing a ticket.\"], \"source\": \"data/helpdesk.json\"}"
+            },
+            {
+              "name": "check_service_status",
+              "result": "{\"service\": \"wifi\", \"status\": \"operational\", \"message\": \"The demo Wi-Fi service has no reported outage.\", \"status_profile\": \"normal\", \"source\": \"data/service_status.json\"}"
+            }
+          ],
+          "tool_rounds": 2
+        },
+        {
+          "node": "agent",
+          "model_answer": "Қазақ тілінде жауап беруді қалайтыныңызды есте сақтадым.\n\nWi‑Fi қызметі қазір жұмыс істеп тұр, істен шығу туралы хабарланбаған. Мына қадамдарды орындап көріңіз:\n\n1. Wi‑Fi қосулы, ал ұшақ режимі өшірулі екенін тексеріңіз.\n2. **Campus-Demo** желісін таңдаңыз.\n3. Қосылмаса, сақталған желіні ұмытып, қайта қосылып көріңіз.\n4. Мәселе жалғасса, билет дайындауға болады.\n\nҚай қадамдарды орындап көрдіңіз және нақты қандай мәселе болып жатыр?"
+        }
+      ],
+      "sources": {
+        "conversation_state": {
+          "thread_id": "isolation-a",
+          "messages_loaded_from_checkpoint": 0
+        },
+        "user_memory_read": {},
+        "user_memory_written": [
+          "{\"saved\": true, \"user_id\": \"demo-user-a\", \"key\": \"language\", \"value\": \"Kazakh\", \"source\": \"user memory (local-storage/user_memory.sqlite)\"}"
+        ],
+        "reference_files": [
+          "data/helpdesk.json",
+          "data/service_status.json"
+        ]
+      },
+      "final_reply": "Қазақ тілінде жауап беруді қалайтыныңызды есте сақтадым.\n\nWi‑Fi қызметі қазір жұмыс істеп тұр, істен шығу туралы хабарланбаған. Мына қадамдарды орындап көріңіз:\n\n1. Wi‑Fi қосулы, ал ұшақ режимі өшірулі екенін тексеріңіз.\n2. **Campus-Demo** желісін таңдаңыз.\n3. Қосылмаса, сақталған желіні ұмытып, қайта қосылып көріңіз.\n4. Мәселе жалғасса, билет дайындауға болады.\n\nҚай қадамдарды орындап көрдіңіз және нақты қандай мәселе болып жатыр?",
+      "tool_rounds": 2,
+      "loop_limit_reached": false,
+      "user_id": "demo-user-a",
+      "thread_id": "isolation-a"
+    },
+    {
+      "user_message": "Have I told you a preferred language or a previous problem?",
+      "nodes": [
+        "load_user_memory",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "load_user_memory",
+          "user_preferences": {}
+        },
+        {
+          "node": "agent",
+          "model_answer": "No language preference is recorded, and no previous problem has been discussed in this conversation."
+        }
+      ],
+      "sources": {
+        "conversation_state": {
+          "thread_id": "isolation-b",
+          "messages_loaded_from_checkpoint": 0
+        },
+        "user_memory_read": {},
+        "user_memory_written": [],
+        "reference_files": []
+      },
+      "final_reply": "No language preference is recorded, and no previous problem has been discussed in this conversation.",
+      "tool_rounds": 0,
+      "loop_limit_reached": false,
+      "user_id": "demo-user-b",
+      "thread_id": "isolation-b"
+    }
+  ]
+}

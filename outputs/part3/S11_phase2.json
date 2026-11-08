@@ -1,0 +1,53 @@
+{
+  "scenario": "S11",
+  "title": "Persist and recall after restart",
+  "phase": 2,
+  "phases_total": 2,
+  "command": "python run_part3.py --scenario S11  (child process: --phase 2)",
+  "process_id": 86986,
+  "reset_before_this_phase": false,
+  "model": "gpt-5.6-luna via OpenAI-compatible API at https://api.openai.com/v1, reasoning_effort=none",
+  "status_profile": "normal",
+  "storage": {
+    "conversation_memory": "local-storage/conversations.sqlite (LangGraph SqliteSaver)",
+    "user_memory": "local-storage/user_memory.sqlite"
+  },
+  "max_tool_rounds": 5,
+  "turns": [
+    {
+      "user_message": "Which problem and steps did we discuss?",
+      "nodes": [
+        "load_user_memory",
+        "agent"
+      ],
+      "trace": [
+        {
+          "node": "load_user_memory",
+          "user_preferences": {
+            "language": "Kazakh"
+          }
+        },
+        {
+          "node": "agent",
+          "model_answer": "Біз **Wi‑Fi желісіне қосыла алмау** мәселесін талқыладық.\n\nСіз орындаған қадамдар:\n- Wi‑Fi-ды қостыңыз.\n- Желіге қайта қосылуға тырыстыңыз, бірақ сәтсіз болды.\n\nНұсқаулықта ұсынылған, бірақ сіз орындағаныңызды айтпаған қадамдар:\n- Ұшақ режимі өшірулі екенін тексеру.\n- **Campus-Demo** желісін таңдау.\n- Сақталған желіні ұмытып, қайта қосылу.\n- Қажет болса, Wi‑Fi қызметінің күйін тексеру."
+        }
+      ],
+      "sources": {
+        "conversation_state": {
+          "thread_id": "restart-a",
+          "messages_loaded_from_checkpoint": 6
+        },
+        "user_memory_read": {
+          "language": "Kazakh"
+        },
+        "user_memory_written": [],
+        "reference_files": []
+      },
+      "final_reply": "Біз **Wi‑Fi желісіне қосыла алмау** мәселесін талқыладық.\n\nСіз орындаған қадамдар:\n- Wi‑Fi-ды қостыңыз.\n- Желіге қайта қосылуға тырыстыңыз, бірақ сәтсіз болды.\n\nНұсқаулықта ұсынылған, бірақ сіз орындағаныңызды айтпаған қадамдар:\n- Ұшақ режимі өшірулі екенін тексеру.\n- **Campus-Demo** желісін таңдау.\n- Сақталған желіні ұмытып, қайта қосылу.\n- Қажет болса, Wi‑Fi қызметінің күйін тексеру.",
+      "tool_rounds": 0,
+      "loop_limit_reached": false,
+      "user_id": "demo-user-a",
+      "thread_id": "restart-a"
+    }
+  ]
+}
