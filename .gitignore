@@ -11,3 +11,4 @@ __pycache__/
 *.sqlite-*
 *.sqlite3-*
 local-storage/
+outputs/part3_fake/
