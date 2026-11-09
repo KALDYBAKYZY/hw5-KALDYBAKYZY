@@ -1,11 +1,3 @@
-"""Interactive helpdesk in the terminal (Part 3 graph: tools + both memories).
-
-Usage:
-    python chat.py --user demo-user-a --thread t1
-    python chat.py --user demo-user-a --thread t1 --profile wifi_outage
-    python chat.py --user demo-user-b --thread t2 --fake
-Type 'exit' to quit. Start again with the same --user and --thread to continue the conversation.
-"""
 import argparse
 
 from dotenv import load_dotenv
