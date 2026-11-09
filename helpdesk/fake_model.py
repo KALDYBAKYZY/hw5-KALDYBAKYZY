@@ -1,10 +1,3 @@
-"""FAKE MODEL — for tests and CI only. It is NOT an LLM.
-
-It follows fixed keyword rules but speaks the same protocol as a real chat model
-(it returns AIMessage objects with tool_calls). This lets the tests check the
-graph loop, the tools and the conditional ticket logic without an API key.
-The real Part 2 demonstration must use a real model.
-"""
 import json
 import re
 import uuid
@@ -48,7 +41,6 @@ class FakeHelpdeskModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=self._decide(messages))])
 
-    # ---------------------------------------------------------------- rules
     def _decide(self, messages) -> AIMessage:
         humans = [i for i, m in enumerate(messages) if isinstance(m, HumanMessage)]
         last_h = humans[-1]
@@ -60,7 +52,6 @@ class FakeHelpdeskModel(BaseChatModel):
             if isinstance(m, ToolMessage):
                 results[m.name] = json.loads(m.content)
 
-        # ---- Part 3 memory rules ----
         system = messages[0].content if messages and messages[0].type == "system" else ""
         saved = re.search(r"language=(\w+)", system)
         earlier = [messages[i].content for i in humans[:-1]]  # from conversation memory
@@ -99,7 +90,6 @@ class FakeHelpdeskModel(BaseChatModel):
         wants_ticket = "ticket" in low or continuing_ticket
         conditional = "if it is operating" in low
 
-        # 1) instructions
         if wants_steps and topic and "find_instructions" not in results:
             return _call("find_instructions", {"topic": topic})
         if "find_instructions" in results and not wants_ticket and not wants_status:
@@ -107,12 +97,10 @@ class FakeHelpdeskModel(BaseChatModel):
             steps = "\n".join(f"{i}. {s}" for i, s in enumerate(r["steps"], 1))
             return AIMessage(content=f"{r['title']} ({r['instruction_id']}):\n{steps}")
 
-        # 2) status
         if wants_status and topic and "check_service_status" not in results:
             return _call("check_service_status", {"topic": topic})
         status = results.get("check_service_status")
 
-        # 3) ticket
         if wants_ticket:
             steps = _steps(text)
             if not topic or not steps:

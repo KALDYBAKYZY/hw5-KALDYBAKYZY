@@ -1,11 +1,3 @@
-"""Part 2 — three reusable helpdesk tools.
-
-Every tool has a plain Python function (`*_impl`) that works WITHOUT the agent.
-`make_tools(ctx)` wraps them as LangChain tools for the model.
-
-The status profile, user_id and thread_id come from the APPLICATION (ctx),
-never from the model. The model only chooses the topic and the ticket text.
-"""
 import json
 import os
 from dataclasses import dataclass
@@ -25,8 +17,7 @@ def _load(name: str) -> dict:
 HELPDESK = _load("helpdesk.json")
 STATUS = _load("service_status.json")
 TICKET_TEMPLATE = _load("ticket_template.json")["ticket"]
-
-VALID_TOPICS = list(HELPDESK["instructions"])  # ["wifi", "password"]
+VALID_TOPICS = list(HELPDESK["instructions"])  
 
 
 def ticket_dir() -> Path:
@@ -41,7 +32,6 @@ def _normalise_topic(topic: str) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------- tool 1
 def find_instructions_impl(topic: str) -> dict:
     """Retrieval from data/helpdesk.json."""
     name = _normalise_topic(topic)
@@ -54,10 +44,7 @@ def find_instructions_impl(topic: str) -> dict:
             "source": "data/helpdesk.json"}
 
 
-# ---------------------------------------------------------------- tool 2
 def check_service_status_impl(topic_or_service: str, status_profile: str) -> dict:
-    """Look up a service in the selected snapshot of data/service_status.json.
-    wifi -> wifi, password -> account_recovery."""
     key = (topic_or_service or "").strip().lower()
     topic = _normalise_topic(key)
     service = HELPDESK["topic_services"][topic] if topic else key
@@ -73,7 +60,6 @@ def check_service_status_impl(topic_or_service: str, status_profile: str) -> dic
             "status_profile": status_profile, "source": "data/service_status.json"}
 
 
-# ---------------------------------------------------------------- tool 3
 SECRET_WORDS = ("password:", "api key", "recovery code")
 
 
@@ -82,8 +68,6 @@ def prepare_ticket_impl(*, summary: str, steps_tried: list[str], category: str,
                         service_status: str = "not checked",
                         reference_ids: list[str] | None = None,
                         out_dir: Path | None = None) -> dict:
-    """Create a LOCAL ticket draft (JSON file). Nothing is sent anywhere.
-    Refuses when required information is missing, instead of inventing it."""
     missing = []
     if not (summary or "").strip():
         missing.append("problem description")
@@ -123,10 +107,8 @@ def prepare_ticket_impl(*, summary: str, steps_tried: list[str], category: str,
             "sent": False, "ticket": ticket}
 
 
-# ---------------------------------------------------------------- wrappers for the model
 @dataclass
 class SessionContext:
-    """Set by the application when a session starts. The model cannot change it."""
     user_id: str
     thread_id: str
     status_profile: str = "normal"
@@ -135,25 +117,16 @@ class SessionContext:
 def make_tools(ctx: SessionContext, user_memory=None) -> list:
     @tool
     def find_instructions(topic: str) -> dict:
-        """Get the official troubleshooting steps from the local helpdesk guide.
-        topic must be 'wifi' or 'password'."""
         return find_instructions_impl(topic)
 
     @tool
     def check_service_status(topic: str) -> dict:
-        """Check whether a service is operating, has an outage, or its status is unknown.
-        topic: 'wifi' (Wi-Fi service) or 'password' (account_recovery service)."""
         return check_service_status_impl(topic, ctx.status_profile)
 
     @tool
     def prepare_ticket(summary: str, steps_tried: list[str], category: str,
                        service_status: str = "not checked",
                        reference_ids: list[str] | None = None) -> dict:
-        """Save a LOCAL support ticket draft (it is NOT sent).
-        summary: the user's problem in their words. steps_tried: only steps the USER said
-        they tried. category: 'wifi' or 'password'. service_status: result of
-        check_service_status ('operational', 'outage', 'unknown') or 'not checked'.
-        reference_ids: e.g. ['GUIDE-WIFI'] if instructions were used."""
         return prepare_ticket_impl(summary=summary, steps_tried=steps_tried, category=category,
                                    user_id=ctx.user_id, thread_id=ctx.thread_id,
                                    status_profile=ctx.status_profile,
@@ -161,13 +134,10 @@ def make_tools(ctx: SessionContext, user_memory=None) -> list:
 
     tools = [find_instructions, check_service_status, prepare_ticket]
 
-    if user_memory is not None:  # Part 3
+    if user_memory is not None:  
         @tool
         def save_user_preference(key: str, value: str) -> dict:
-            """Save a preference for THIS user in user memory, so later conversations can use it.
-            Call it only when the user explicitly asks you to remember a preference.
-            key: 'language'. value: e.g. 'Kazakh'. Never save passwords or secrets."""
-            return user_memory.set(ctx.user_id, key, value)  # user_id comes from the app
+            return user_memory.set(ctx.user_id, key, value)  
 
         tools.append(save_user_preference)
     return tools

@@ -13,20 +13,16 @@ def storage_dir() -> Path:
     p = Path(os.getenv("HELPDESK_STORAGE_DIR", "local-storage"))
     return p if p.is_absolute() else ROOT / p
 
-
 def open_checkpointer(path: Path | None = None) -> SqliteSaver:
     path = Path(path) if path else storage_dir() / "conversations.sqlite"
     path.parent.mkdir(parents=True, exist_ok=True)
     return SqliteSaver(sqlite3.connect(path, check_same_thread=False))
 
-
 def reset_storage(path: Path | None = None) -> None:
     """Delete all saved conversations and user preferences."""
     shutil.rmtree(Path(path) if path else storage_dir(), ignore_errors=True)
 
-
 class UserMemory:
-
     def __init__(self, path: Path | None = None):
         path = Path(path) if path else storage_dir() / "user_memory.sqlite"
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,14 +1,3 @@
-"""Part 2 + Part 3 — a model chooses tools inside a LangGraph loop.
-
-Part 2 graph (no user memory):
-    START -> agent --(tool calls, rounds < limit)--> tools -> agent  (loop)
-                   --(tool calls, rounds >= limit)--> limit_reached -> END
-                   --(no tool calls)----------------> END
-
-Part 3 graph (user memory given): the same, but it starts with
-    START -> load_user_memory -> agent -> ...
-Conversation memory is the checkpointer passed to compile() (key: thread_id).
-"""
 import os
 from typing import Annotated, TypedDict
 
@@ -48,10 +37,10 @@ MEMORY_PROMPT = """Memory rules:
 
 
 class AgentState(TypedDict, total=False):
-    messages: Annotated[list[AnyMessage], add_messages]  # conversation (appended, not replaced)
-    tool_rounds: int            # how many times the tools node ran in this user turn
+    messages: Annotated[list[AnyMessage], add_messages] 
+    tool_rounds: int           
     loop_limit_reached: bool
-    user_preferences: dict      # Part 3: copy of user memory, refreshed every turn
+    user_preferences: dict      
 
 
 def _format_prefs(prefs: dict) -> str:
@@ -71,25 +60,21 @@ def build_agent(model, ctx: SessionContext, checkpointer=None, system_extra: str
         return text + ("\n" + system_extra if system_extra else "")
 
     def load_user_memory(state: AgentState) -> dict:
-        """Part 3: read THIS user's saved preferences. user_id comes from the application."""
         return {"user_preferences": user_memory.get(ctx.user_id)}
 
     def agent(state: AgentState) -> dict:
-        """The MODEL decides: request tool(s) or answer."""
         reply = model_with_tools.invoke([SystemMessage(system_text(state))] + state["messages"])
         return {"messages": [reply]}
 
     def tools_step(state: AgentState) -> dict:
-        """MY PROGRAM executes the tools the model requested."""
         result = tool_node.invoke(state)
         update = {"messages": result["messages"],
                   "tool_rounds": state.get("tool_rounds", 0) + 1}
-        if user_memory is not None:  # a preference may have just been saved
+        if user_memory is not None:  
             update["user_preferences"] = user_memory.get(ctx.user_id)
         return update
 
     def limit_reached(state: AgentState) -> dict:
-        """Stop the loop. Close open tool calls so the history stays valid."""
         last = state["messages"][-1]
         skipped = [ToolMessage(content="Not executed: tool loop limit reached.",
                                tool_call_id=c["id"]) for c in last.tool_calls]
@@ -98,7 +83,6 @@ def build_agent(model, ctx: SessionContext, checkpointer=None, system_extra: str
         return {"messages": skipped + [final], "loop_limit_reached": True}
 
     def route_after_agent(state: AgentState) -> str:
-        """Conditional edge: tool calls -> run tools (if under the limit), else END."""
         last = state["messages"][-1]
         if not getattr(last, "tool_calls", None):
             return END
@@ -121,9 +105,7 @@ def build_agent(model, ctx: SessionContext, checkpointer=None, system_extra: str
     builder.add_edge("limit_reached", END)
     return builder.compile(checkpointer=checkpointer)
 
-
 def get_model(fake: bool = False):
-    """Real model from .env, or the clearly labelled fake model for tests/CI."""
     if fake:
         from helpdesk.fake_model import FakeHelpdeskModel
         return FakeHelpdeskModel()
@@ -134,8 +116,6 @@ def get_model(fake: bool = False):
     kwargs = {"model": name, "base_url": os.getenv("OPENAI_BASE_URL") or None}
     effort = os.getenv("REASONING_EFFORT")
     if effort:
-        # Reasoning models (gpt-5.x): tools in Chat Completions need reasoning_effort='none'.
-        # These models do not accept a custom temperature, so it is not sent.
         kwargs["reasoning_effort"] = effort
     else:
         kwargs["temperature"] = 0
@@ -143,14 +123,12 @@ def get_model(fake: bool = False):
         kwargs["use_responses_api"] = True
     return ChatOpenAI(**kwargs)
 
-
 def model_label(model) -> str:
     if getattr(model, "is_fake", False):
         return "FAKE rule-based test model (no LLM)"
     base = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
     extra = f", reasoning_effort={os.getenv('REASONING_EFFORT')}" if os.getenv("REASONING_EFFORT") else ""
     return f"{os.getenv('MODEL_NAME')} via OpenAI-compatible API at {base}{extra}"
-
 
 def run_turn(graph, message: str, thread_id: str) -> dict:
     """Send one user message. Return the trace of this turn (nodes, tool calls, results)

@@ -1,4 +1,3 @@
-
 import json
 from pathlib import Path
 from typing import TypedDict
@@ -10,10 +9,8 @@ def load_helpdesk() -> dict:
     with open(DATA_DIR / "helpdesk.json", encoding="utf-8") as f:
         return json.load(f)
 
-
 HELPDESK = load_helpdesk()
 ALIASES = HELPDESK["topic_aliases"] 
-
 
 class HelpdeskState(TypedDict, total=False):
     message: str   
@@ -39,24 +36,19 @@ def read_request(state: HelpdeskState) -> dict:
         category = "other"
     return {"category": category}
 
-
 def wifi_help(state: HelpdeskState) -> dict:
     return {"reply": format_instructions("wifi")}
 
-
 def password_help(state: HelpdeskState) -> dict:
     return {"reply": format_instructions("password")}
-
 
 def other_help(state: HelpdeskState) -> dict:
     return {"reply": "I can help only with Wi-Fi or password problems. "
                      "Is your problem about Wi-Fi or about a password?"}
 
-
 def clarify_problem(state: HelpdeskState) -> dict:
     return {"reply": "Your message mentions both Wi-Fi and a password. "
                      "Which problem do you want to solve first: Wi-Fi or password?"}
-
 
 def route_original(state: HelpdeskState) -> str:
     category = state["category"]
@@ -66,12 +58,10 @@ def route_original(state: HelpdeskState) -> str:
         return "password_help"
     return "other_help"
 
-
 def route_with_clarification(state: HelpdeskState) -> str:
     if state["category"] == "both":
         return "clarify_problem"
     return route_original(state)
-
 
 def build_graph(variant: str = "original"):
     builder = StateGraph(HelpdeskState)
