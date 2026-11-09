@@ -1,17 +1,3 @@
-"""Part 3 — two separate kinds of memory, both saved on disk.
-
-1. Conversation memory  -> LangGraph checkpointer (SqliteSaver), key = thread_id
-   local-storage/conversations.sqlite
-   Holds the full graph state of ONE conversation: messages, tool results, tool_rounds.
-
-2. User memory          -> my own small SQLite table, key = user_id
-   local-storage/user_memory.sqlite
-   Holds saved preferences of ONE person, e.g. {"language": "Kazakh"}.
-   It is shared by all conversations of that user and is never shared between users.
-
-Retrieval (find_instructions reading data/helpdesk.json) is NOT memory:
-it is fixed reference data, the same for every user and every conversation.
-"""
 import os
 import shutil
 import sqlite3
@@ -21,8 +7,7 @@ from pathlib import Path
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 ROOT = Path(__file__).resolve().parent.parent
-ALLOWED_KEYS = {"language"}  # only safe, simple preferences; never secrets
-
+ALLOWED_KEYS = {"language"} 
 
 def storage_dir() -> Path:
     p = Path(os.getenv("HELPDESK_STORAGE_DIR", "local-storage"))
@@ -30,7 +15,6 @@ def storage_dir() -> Path:
 
 
 def open_checkpointer(path: Path | None = None) -> SqliteSaver:
-    """Conversation memory. The application passes thread_id in the config."""
     path = Path(path) if path else storage_dir() / "conversations.sqlite"
     path.parent.mkdir(parents=True, exist_ok=True)
     return SqliteSaver(sqlite3.connect(path, check_same_thread=False))
@@ -42,7 +26,6 @@ def reset_storage(path: Path | None = None) -> None:
 
 
 class UserMemory:
-    """User memory: preferences stored per user_id."""
 
     def __init__(self, path: Path | None = None):
         path = Path(path) if path else storage_dir() / "user_memory.sqlite"
