@@ -6,15 +6,15 @@
 
 Code: `helpdesk/part1_graph.py`. Run: `python run_part1.py` (add `--draw` to print the graphs as Mermaid).
 
-```mermaid
-graph TD
-    START([START]) --> read_request
-    read_request -.wifi / both.-> wifi_help
-    read_request -.password.-> password_help
-    read_request -.other.-> other_help
-    wifi_help --> END([END])
-    password_help --> END
-    other_help --> END
+```
+START
+  │
+  ▼
+read_request            (sets category)
+  │
+  ├── category = wifi or both ──► wifi_help      (sets reply) ──► END
+  ├── category = password ──────► password_help  (sets reply) ──► END
+  └── category = other ─────────► other_help     (sets reply) ──► END
 ```
 
 State (`HelpdeskState`):
@@ -62,17 +62,16 @@ Logs: `outputs/part1/predictions_original.json`, `outputs/part1/S01.json` … `S
 
 I added the node `clarify_problem` and a new router `route_with_clarification`. Build it with `build_graph("with_clarification")`.
 
-```mermaid
-graph TD
-    START([START]) --> read_request
-    read_request -.wifi.-> wifi_help
-    read_request -.password.-> password_help
-    read_request -.both.-> clarify_problem
-    read_request -.other.-> other_help
-    wifi_help --> END([END])
-    password_help --> END
-    clarify_problem --> END
-    other_help --> END
+```
+START
+  │
+  ▼
+read_request            (sets category)
+  │
+  ├── category = wifi ──────► wifi_help        ──► END
+  ├── category = password ──► password_help    ──► END
+  ├── category = both ──────► clarify_problem  ──► END    ← NEW
+  └── category = other ─────► other_help       ──► END
 ```
 
 New trace for `My Wi-Fi password does not work.` (`outputs/part1/S05.json`):
@@ -99,14 +98,17 @@ Why `reasoning_effort=none`: my first run failed with error 400. OpenAI said tha
 
 ### The model/tool loop
 
-```mermaid
-graph TD
-    START([START]) --> agent
-    agent -.tool calls, rounds < limit.-> tools
-    tools --> agent
-    agent -.tool calls, rounds >= limit.-> limit_reached
-    agent -.no tool calls.-> END([END])
-    limit_reached --> END
+```
+START
+  │
+  ▼
+agent  ◄─────────────────────────────┐   (MODEL: tool call or answer)
+  │                                  │
+  ├── tool_calls, rounds < 5 ──► tools ──┘   (PROGRAM runs the tool, tool_rounds + 1)
+  │
+  ├── tool_calls, rounds >= 5 ──► limit_reached ──► END
+  │
+  └── no tool_calls (answer) ───► END
 ```
 
 1. `agent` node: the **model** reads the messages and returns an `AIMessage`. This message has either `tool_calls` (a request) or normal text (the answer).
@@ -178,15 +180,23 @@ Expected: `operational` → ticket draft. `outage` → no ticket, the condition 
 
 Code: `helpdesk/memory.py`, `helpdesk/agent.py` (`load_user_memory` node), `helpdesk/tools.py` (`save_user_preference`), `run_part3.py`, `chat.py`.
 
-```mermaid
-graph TD
-    START([START]) --> load_user_memory
-    load_user_memory --> agent
-    agent -.tool calls, rounds < limit.-> tools
-    tools --> agent
-    agent -.tool calls, rounds >= limit.-> limit_reached
-    agent -.no tool calls.-> END([END])
-    limit_reached --> END
+```
+START
+  │
+  ▼
+load_user_memory        (reads language by user_id)
+  │
+  ▼
+agent  ◄─────────────────────────────┐
+  │                                  │
+  ├── tool_calls, rounds < 5 ──► tools ──┘
+  │
+  ├── tool_calls, rounds >= 5 ──► limit_reached ──► END
+  │
+  └── no tool_calls (answer) ───► END
+
+Conversation memory: SqliteSaver, key = thread_id  (local-storage/conversations.sqlite)
+User memory:         UserMemory,  key = user_id    (local-storage/user_memory.sqlite)
 ```
 
 I use **two separate kinds of memory**. Both are saved on disk in `local-storage/` (this folder is in `.gitignore`).
