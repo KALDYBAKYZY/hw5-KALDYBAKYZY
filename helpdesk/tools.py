@@ -8,11 +8,9 @@ from langchain_core.tools import tool
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 
-
 def _load(name: str) -> dict:
     with open(DATA_DIR / name, encoding="utf-8") as f:
         return json.load(f)
-
 
 HELPDESK = _load("helpdesk.json")
 STATUS = _load("service_status.json")
@@ -117,26 +115,37 @@ class SessionContext:
 def make_tools(ctx: SessionContext, user_memory=None) -> list:
     @tool
     def find_instructions(topic: str) -> dict:
+        """Get the official troubleshooting steps from the local helpdesk guide.
+        topic must be 'wifi' or 'password'."""
         return find_instructions_impl(topic)
 
     @tool
     def check_service_status(topic: str) -> dict:
+        """Check whether a service is operating, has an outage, or its status is unknown.
+        topic: 'wifi' (Wi-Fi service) or 'password' (account_recovery service)."""
         return check_service_status_impl(topic, ctx.status_profile)
 
     @tool
     def prepare_ticket(summary: str, steps_tried: list[str], category: str,
                        service_status: str = "not checked",
                        reference_ids: list[str] | None = None) -> dict:
+        """Save a LOCAL support ticket draft (it is NOT sent).
+        summary: the user's problem in their words. steps_tried: only steps the USER said
+        they tried. category: 'wifi' or 'password'. service_status: result of
+        check_service_status ('operational', 'outage', 'unknown') or 'not checked'.
+        reference_ids: e.g. ['GUIDE-WIFI'] if instructions were used."""
         return prepare_ticket_impl(summary=summary, steps_tried=steps_tried, category=category,
                                    user_id=ctx.user_id, thread_id=ctx.thread_id,
                                    status_profile=ctx.status_profile,
                                    service_status=service_status, reference_ids=reference_ids)
-
     tools = [find_instructions, check_service_status, prepare_ticket]
 
     if user_memory is not None:  
         @tool
         def save_user_preference(key: str, value: str) -> dict:
+            """Save a preference for THIS user in user memory, so later conversations can use it.
+            Call it only when the user explicitly asks you to remember a preference.
+            key: 'language'. value: e.g. 'Kazakh'. Never save passwords or secrets."""
             return user_memory.set(ctx.user_id, key, value)  
 
         tools.append(save_user_preference)
