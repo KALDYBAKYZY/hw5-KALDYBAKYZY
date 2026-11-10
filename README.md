@@ -1,6 +1,6 @@
 # HW5 — University IT helpdesk with LangGraph
 
-Student: Bissembayeva Aigerim · CSS-4007 Artificial Intelligence
+Student: Zhaiylgan Gulnaz · CSS-4007 Artificial Intelligence
 
 My answers, drawings and results are in [SUBMISSION.md](SUBMISSION.md).
 The original task text is below this section.
